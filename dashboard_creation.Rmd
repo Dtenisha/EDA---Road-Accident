@@ -1,0 +1,257 @@
+---
+title: "Road Accidents in India - 2018"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: cerulean
+    source_code: embed
+    social: ["twitter","instagram","github","menu"]
+    orientation: row
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(knitr)
+library(DT)
+library(rpivotTable)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(openintro)
+
+library(ggvis)
+```
+
+
+```{r}
+##loading dataset
+Type_of_junctions<-read.csv( "C:/Users/Tenisha/Documents/acci_data/Accidents Classified According to Type of Junctions during 2018.csv")
+month_wise_accidents<-read.csv("C:/Users/Tenisha/Documents/acci_data/monthwise-accidents.csv")
+NH_killed<-read.csv("C:/Users/Tenisha/Documents/acci_data/national-highways-killed.csv")
+SH_killed<-read.csv("C:/Users/Tenisha/Documents/acci_data/statehighways-killed.csv")
+non_wearing_helmet<-read.csv("C:/Users/Tenisha/Documents/acci_data/Road-Accidents-2018-non wearing of helmet.csv")
+non_wearing_seatbelt<-read.csv("C:/Users/Tenisha/Documents/acci_data/Non-Use of Safety Device (Non-Wearing of Seat Belt) by Victims during 2018.csv")
+place_of_occurrence<-read.csv("C:/Users/Tenisha/Documents/acci_data/place of occurence.csv")
+type_of_roads<-read.csv("C:/Users/Tenisha/Documents/acci_data/Road-Accidents-2018--type of roads.csv")
+traffic_violations<-read.csv("C:/Users/Tenisha/Documents/acci_data/Road-Accidents-2018-Traffic violations.csv")
+weather_conditions<-read.csv("C:/Users/Tenisha/Documents/acci_data/Road-Accidents-2018-weather conditions.csv")
+
+##slicing dataset
+
+type.of.junctions.killed<-Type_of_junctions[c(2,5,11,16,21,26,31)]
+NH_killed.persons<-NH_killed[6]
+SH_killed.persons<-SH_killed[6]
+non.wearing.helmet.killed<-non_wearing_helmet[c(3,8)]
+non.wearing.seatbelt<-non_wearing_seatbelt[c(3,8)]
+type.of.roads.killed<-type_of_roads[c(5,11,16,21,26,31,36,41)]
+traffic.violations.killed<-traffic_violations[c(5,11,16,21,26)]
+weather.conditions.killed<-weather_conditions[c(5,11,16,21,26)]
+
+
+##combining dataset
+total.persons.killed.2018<-cbind.data.frame(c(type.of.junctions.killed,NH_killed.persons,SH_killed.persons,non.wearing.helmet.killed,non.wearing.seatbelt,type.of.roads.killed,traffic.violations.killed,weather.conditions.killed))
+
+##combining the sliced dataset
+total.persons.killed.2018<-cbind.data.frame(c(type.of.junctions.killed,NH_killed.persons,SH_killed.persons,non.wearing.helmet.killed,non.wearing.seatbelt,type.of.roads.killed,traffic.violations.killed,weather.conditions.killed))
+
+
+##changing column names
+colnames(total.persons.killed.2018)<-c("States.UTs","T.junction","Y.junction","Four.arm.junction","Staggered.junction","Round.about.junction","other.junctions","National.highways","State.highways","Helmet.Drivers","Helmet.Passengers","Seatbelt.Drivers","Seatbelt.Passengers","Straight.Road","Curved.Road","Bridge","Culvert","Pot.holes","Steep.grade","Ongoing.road.work.under.constructions","Other.roads","Over.speeding","Drunken.Driving-consumption.of.Alcohol&Drug","Driving.on.wrongside","Jumping.red.light","Use.of.mobile.phone","sunny.clear","Rainy","Foggy/Misty","Hail.Sleet","Other.weather.conditions")
+
+total.No.Persons.Killed.2018<-total.persons.killed.2018[-37,]
+
+
+```
+
+
+
+```{r}
+Type_of_Accidents_2018<-read.csv("C:/Users/Tenisha/Desktop/Accidents_dataset/Road-Accidents-2018--type of accidents in 2018.csv")
+age_gender_data<-read.csv("C:/Users/Tenisha/Desktop/Accidents_dataset/Road-Accidents-2018--age_and_gender.csv")
+traffic_violations<-read.csv("C:/Users/Tenisha/Desktop/Accidents_dataset/Road-Accidents-2018--type of accidents in 2018.csv")
+
+total.No.Persons.Killed.2018$Total.killed<-rowSums(total.No.Persons.Killed.2018[2:31])
+data3<-total.No.Persons.Killed.2018[c(1,32)]
+```
+
+Data Visualization {data-orientation=columns}
+===================================================================================
+Row
+-----------------------------------------------------------------------------------
+### MAXIMUM KILLED
+
+```{r}
+valueBox(max(total.No.Persons.Killed.2018$Total.killed),
+         icon = 'fa-analytics')
+```
+
+### MINIMUM KILLED
+
+```{r}
+valueBox(min(total.No.Persons.Killed.2018$Total.killed),
+         icon = 'fa-analytics')
+```
+
+### AVERAGE KILLLED
+
+```{r}
+valueBox(round(mean(total.No.Persons.Killed.2018$Total.killed),digits=2),
+         icon = 'fa-traffic-light-stop')
+```
+
+### TOTAL PEOPLE KILLED MONTH-WISE IN INDIA
+```{r}
+data1<-month_wise_accidents[c(2,5,11,17,23,29,35,41,47,53,59,65,71)]
+month.wise.total.killed<-data1[-37,]
+library(tidyverse)
+month.wise.total.killed$Total.killed<-rowSums(month.wise.total.killed[2:13])
+colnames(month.wise.total.killed)<-c("States.UTs","JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC","TOTAL")
+d<-month.wise.total.killed[-c(1,14)]
+e<-gather(d)
+plot_ly(e,labels = ~e$key,values=e$value,type = 'pie')
+
+```   
+
+
+
+
+
+Column
+------------------------------------------------------------------------------------
+
+### TOTAL ROAD ACCIDENTS IN INDIA - 2018
+```{r}
+library(tidyverse)
+total_accidents<-select(Type_of_Accidents_2018,c("States.UTs","Total.Accidents"))
+total_accidents1<-total_accidents[-c(37,38),]
+a<-ggplot(data = total_accidents1,aes(reorder(x=States.UTs,Total.Accidents),y=Total.Accidents))+geom_bar(stat="identity",fill="salmon")+coord_flip()+ggtitle("Total Road Accidents in 2018")+xlab("States & Union Territories")+ylab("Total No.of Road Accidents")
+ggplotly(a)
+```
+
+Row
+----------------------------------------------------------------------------------
+### AGE AND GENDER WISE TOTAL ACCIDENTS
+```{r}
+##AGE AND GENDER WISE ROAD ACCIDENT
+age_gender_data<-read.csv("C:/Users/Tenisha/Desktop/Accidents_dataset/Road-Accidents-2018--age_and_gender.csv")
+
+age.gender1<-age_gender_data[37,]
+age.gender2<-age.gender1[3:16]
+age.gender3<-data.frame(t(age.gender2))
+age.gender4<-c("lessthan.18-M","lessthan.18-F","18-25.M","18-25.F","25-35.M","25-35.F","35-45.M","35-45.F","45-60.M","45-60.F","60&above.M","60&above.F","Age_notknown.M","Age_notknown.F")
+age.gender5<-data.frame(age.gender4,age.gender3$X37)
+#barplot
+p<-ggplot(age.gender5,aes(reorder(x=age.gender4,age.gender3.X37),y=age.gender3.X37,fill=age.gender4))+geom_bar(stat="identity")+coord_flip()+ggtitle("Age & Gender wise Accidents in 2018")+xlab("Age & Gender")+ylab("No Of Accidents")
+ggplotly(p)
+        
+
+```
+
+### TRAFFIC VIOLATIONS
+```{r}
+#TRAFFIC VIOLATIONS
+##loading dataset
+traffic_violations<-read.csv("C:/Users/Tenisha/Documents/acci_data/Road-Accidents-2018-Traffic violations.csv")
+library(dplyr)
+
+##removing unwanted rows and columns
+#removing rows which contains total
+data1<-traffic_violations[-37,]
+##checking missing values
+
+
+
+##scatterplot
+
+v<-ggplot(data1,aes(x=Over.Speeding...Persons.Killed...Number,y=Over.Speeding...Persons.Injured...Greviously.Injured))+geom_point(color="red")+geom_line(color="black")
+ggplotly(v)
+```
+
+------------------------------------------------------------------------------------------
+
+
+```{r}
+total.No.Persons.Killed.2018$Total.killed<-rowSums(total.No.Persons.Killed.2018[2:31])
+data3<-total.No.Persons.Killed.2018[c(1,32)]
+```
+
+Data Table
+=================================================================================================
+```{r}
+datatable(total.No.Persons.Killed.2018,
+          caption = "Total.People.killed.in.Road.Accidents",
+          rownames = T,
+          filter = "top",
+          options = list(pageLength = 25))
+
+```
+
+
+Pivot Table
+=================================================================================================
+```{r}
+
+rpivotTable(total.No.Persons.Killed.2018,
+            aggregatorName = "Count",
+            cols= "fm",
+            rows = "State",
+            rendererName = "Heatmap")
+```
+
+
+MAP
+==================================================================================================
+
+
+
+```{r}
+library(htmlwidgets)
+library(dplyr)
+library(highcharter)
+
+
+hcmap(
+  "countries/in/in-all",
+  data = data3,
+  value = "Total.killed",
+  
+  name = "Totally.killed",
+  dataLabels = list(enabled = TRUE, format = "{point.name}"),
+  borderColor = "#FAFAFA",
+  borderWidth = 1.0,
+  tooltip = list(
+  valueDecimals = 2
+    
+  )
+)%>%
+            hc_colorAxis(minColor = "lightgreen", maxColor = "red")%>%
+            hc_title(text = "Total People Killed in Road Accidents in India - 2018")
+
+
+
+```
+Summary
+===========================================================================================================
+Row 
+-----------------------------------------------------------------------------------------------------------
+### MAXIMUM ACCIDENTS
+```{r}
+valueBox(max(total_accidents1$Total.Accidents),
+         icon = 'fa-traffic-light-stop')
+```
+
+### MINIMUM ACCIDENTS
+
+```{r}
+valueBox(min(total_accidents1$Total.Accidents),
+         icon = 'fa-traffic-light-stop')
+```
+
+### AVERAGE ACCIDENTS
+
+```{r}
+valueBox(round(mean(total_accidents1$Total.Accidents),digits=2),
+         icon = 'fa-traffic-light-stop')
+```
+
+-------------------------------------------------------------------------------------------------------------
